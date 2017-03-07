@@ -7,7 +7,20 @@
 //
 
 import Foundation
+import MapKit
 
-struct Place {
-    let name : String
+class Place : NSObject {
+    var title: String?
+    var subtitle: String?
+    var coordinate: CLLocationCoordinate2D
+    
+    init(Title t:String, SubTitle st:String, coordinate: CLLocationCoordinate2D) {
+        self.title = t
+        self.subtitle = st
+        self.coordinate = coordinate
+    }
+}
+
+extension Place : MKAnnotation {
+    
 }

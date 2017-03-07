@@ -18,6 +18,6 @@ class PlaceCell: UITableViewCell {
     
     public func setup(WithPlace p:Place)
     {
-        nameLabel.text = p.name
+        nameLabel.text = p.title
     }    
 }
