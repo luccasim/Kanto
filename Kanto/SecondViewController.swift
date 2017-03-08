@@ -18,22 +18,19 @@ class SecondViewController: UIViewController {
             tableView.register(UINib.init(nibName: "PlaceCell", bundle: nil), forCellReuseIdentifier: "placeCell")
         }
     }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
-
 }
 
 extension SecondViewController : UITableViewDelegate{
-    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let place = data[indexPath.row]
+        if let mapVC = self.tabBarController?.viewControllers?[0] as? FirstViewController {
+            mapVC.centerMapOnLocation(location: place.location)
+            self.tabBarController?.selectedViewController = mapVC
+        }
+    }
+}
+
+extension SecondViewController : UITabBarControllerDelegate{
 }
 
 extension SecondViewController : UITableViewDataSource{

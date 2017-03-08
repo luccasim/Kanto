@@ -16,21 +16,13 @@ class FirstViewController: UIViewController {
     
     @IBOutlet weak var mapView: MKMapView!{
         didSet{
-            mapView.delegate = nil
             mapView.delegate = self
         }
     }
-    let regionRadius : CLLocationDistance = 50
     
-    var locationManager = CLLocationManager(){
-        didSet{
-            locationManager.requestWhenInUseAuthorization()
-            locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-            locationManager.distanceFilter = 10
-            locationManager.startUpdatingLocation()
-        }
-    }
+    private let regionRadius : CLLocationDistance = 1000
+    
+    fileprivate var locationManager = CLLocationManager()
     
     func centerMapOnLocation(location: CLLocation)
     {
@@ -38,21 +30,62 @@ class FirstViewController: UIViewController {
         mapView.setRegion(coordinateRegion, animated: true)
     }
     
+    fileprivate let places = PlacesManager()
+    
+    private func addNotation()
+    {
+        let data = places.getData
+        for elem in data {
+            mapView.addAnnotation(elem)
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        let initalLocation = CLLocation(latitude: 48.89650732, longitude: 2.31852293)
-        mapView.addAnnotation(Place(Title: "42", SubTitle: "ecole cool", coordinate: CLLocationCoordinate2D(latitude: initalLocation.coordinate.latitude, longitude: initalLocation.coordinate.longitude)))
-        centerMapOnLocation(location: initalLocation)
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        locationManager.distanceFilter = 100
+        addNotation()
+        let ecole = places.first
+        centerMapOnLocation(location: ecole.location)
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
+    @IBAction func switchMap(_ sender: UISegmentedControl) {
+        let identifier = sender.selectedSegmentIndex
+        switch identifier {
+        case 0:
+            mapView.mapType = .standard
+        case 1:
+            mapView.mapType = .hybrid
+        default:
+            mapView.mapType = .satellite
+        }
     }
-
+    @IBAction func centerLocalisation(_ sender: UIButton)
+    {
+        let status = CLLocationManager.authorizationStatus()
+        if status == .authorizedWhenInUse {
+            locationManager.startUpdatingLocation()
+        }
+        else {
+            locationManager.requestWhenInUseAuthorization()
+        }
+    }
 
 }
 
 extension FirstViewController : MKMapViewDelegate{
+    
+    private func setPinTinColor(Pin pin: MKPinAnnotationView, Type typ:Type)
+    {
+        switch typ {
+        case .monument:
+            pin.pinTintColor = UIColor.blue
+        default:
+            pin.pinTintColor = UIColor.red
+        }
+    }
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         if let annotation = annotation as? Place {
@@ -61,34 +94,31 @@ extension FirstViewController : MKMapViewDelegate{
             if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKPinAnnotationView {
                 dequeuedView.annotation = annotation
                 view = dequeuedView
+                setPinTinColor(Pin: view, Type: annotation.type)
             }
             else {
                 view = MKPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
                 view.canShowCallout = true
-                view.calloutOffset = CGPoint(x: -5, y: 5)
                 view.rightCalloutAccessoryView = UIButton.init(type: .detailDisclosure)
+                setPinTinColor(Pin: view, Type: annotation.type)
             }
             return view
         }
         return nil
     }
-    
-    func mapViewWillStartLocatingUser(_ mapView: MKMapView) {
-        print(mapView)
-    }
-    
-    func mapView(_ mapView: MKMapView, didAdd views: [MKAnnotationView]) {
-        for elem in views {
-            print(elem)
-        }
-    }
 }
 
 extension FirstViewController : CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        for elem in locations {
-            print(elem)
+        mapView.showsUserLocation = true
+        locationManager.stopUpdatingLocation()
+        if let userLocalisation = locations.first {
+            centerMapOnLocation(location: userLocalisation)
         }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("erreur de localisation!")
     }
 }
 
